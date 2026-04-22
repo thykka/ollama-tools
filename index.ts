@@ -13,6 +13,9 @@ const Color = {
 
 const [nodePath, scriptPath, ...prompt] = process.argv;
 
+const think = process.env.THINK === '1' ? 'low' : false;
+const debug = process.env.DEBUG === '1';
+
 async function agentLoop() {
   const toolSpecs = await loadTools();
   const tools = toolSpecs
@@ -34,7 +37,7 @@ async function agentLoop() {
       model: 'gemma4:e4b',
       messages,
       tools,
-      think: 'low',
+      think,
       stream: true,
       options: {
         temperature: 1.0,
@@ -100,7 +103,7 @@ async function agentLoop() {
     }
   }
   process.stdout.write('\n\n');
-  if (process.env.DEBUG) console.log(messages);
+  if (debug) console.log(messages);
 }
 
 function shutdown() {

@@ -9,6 +9,7 @@ const truncate = (input: string, maxLength: number = 150): string => {
 };
 
 function parseResults(html: string): string {
+  const maxResults = 8;
   const dom = parseDocument(html);
   const results: unknown[] = [];
   DomUtils.findAll(node => {
@@ -27,7 +28,7 @@ function parseResults(html: string): string {
     results.push(`${results.length + 1}. [${title}](${href})\n> ${truncate(description)}\n`);
     return false;
   }, dom);
-  return `Found ${results.length} results. Refer to them using the provided numbers.\n\n${results.slice(0, 8).join('\n')}`;
+  return `Found ${Math.min(results.length, maxResults)} results. Refer to them using the provided numbers.\n\n${results.slice(0, maxResults).join('\n')}`;
 }
 
 async function webSearchFn(query: string): Promise<string> {
