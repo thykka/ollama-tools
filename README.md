@@ -32,5 +32,5 @@ $ npm start "Is it Friday yet?"
 
 ## Creating tools
 
-Copy one of the example tools for a simple starting point - [`dir`](./tools/dir.ts) is the simplest, [`hello`](./tools/hello.ts) shows an example of a tool with arguments.
+Copy [`hello`](./tools/hello.ts) for a simple starting point.
 Remember to import and add your tool to the `toolSpecs` object in [index.ts](./index.ts).
