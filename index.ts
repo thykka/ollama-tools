@@ -4,11 +4,12 @@ import ollama, { Message, Tool } from 'ollama';
 import type { ToolSpec } from './types/tools.js';
 
 import { hello } from './tools/hello.js';
-import { dir } from './tools/dir.js';
-import { chef } from './tools/chef.js';
+import { env } from './tools/env.js';
+import { dice } from './tools/dice.js';
 import { timeDate } from './tools/timedate.js';
+import { readDir, readFile } from './tools/fs.js';
 
-const toolSpecs: Record<string, ToolSpec> = { hello, dir, chef, timeDate };
+const toolSpecs: Record<string, ToolSpec> = { hello, env, dice, timeDate, readDir, readFile };
 const tools: Tool[] = Object.values(toolSpecs).map(spec => spec.definition);
 
 const DEBUG = false;
@@ -23,10 +24,6 @@ const [nodePath, scriptPath, ...prompt] = process.argv;
 
 async function agentLoop() {
   const messages: Message[] = [
-    {
-      role: 'system',
-      content: 'NOTE: User cannot see tool results, assistant must always format and relay them.'
-    },
     {
       role: 'user',
       content: prompt.join(' ') ?? '(blank message)'
@@ -58,20 +55,18 @@ async function agentLoop() {
       if (chunk.message.thinking) {
         if (!isThinking) {
           isThinking = true;
-          process.stdout.write(`${Color.grey}> Thinking...\n`);
+          process.stdout.write(`${Color.grey}`);
         }
         process.stdout.write(chunk.message.thinking);
         thinking += chunk.message.thinking;
       } else if (isThinking) {
         isThinking = false;
         const thinkTime = (performance.now() - startTime) / 1000;
-        process.stdout.write(`\n> Thought for ${thinkTime.toFixed(2)}s\n${Color.reset}`);
+        process.stdout.write(`\n  (Thought for ${thinkTime.toFixed(2)}s)\n${Color.reset}`);
       }
       if (chunk.message.content) {
         process.stdout.write(chunk.message.content);
         content += chunk.message.content;
-      } else if (!isThinking) {
-        process.stdout.write('\n');
       }
       if (chunk.message.tool_calls?.length) {
         toolCalls.push(...chunk.message.tool_calls);
@@ -80,7 +75,7 @@ async function agentLoop() {
 
     if (thinking || content || toolCalls.length) {
       messages.push({
-        role: 'assistant',
+        role: 'agent',
         thinking,
         content,
         tool_calls: toolCalls
@@ -93,10 +88,9 @@ async function agentLoop() {
       const { name } = call.function;
       if (name in toolSpecs) {
         const spec = toolSpecs[name as keyof typeof toolSpecs];
+        process.stdout.write(`\n${Color.cyan}> Tool<${name}(${JSON.stringify(call.function.arguments)})>\n`);
         const result = spec.execute(call.function.arguments ?? {});
-        process.stdout.write(
-          `${Color.cyan}> Tool<${name}(${JSON.stringify(call.function.arguments)})>: ${result}\n\n${Color.reset}`
-        );
+        process.stdout.write(`${result}${Color.reset}\n\n`);
         messages.push({ role: 'tool', tool_name: name, content: result });
       } else {
         messages.push({
@@ -107,7 +101,7 @@ async function agentLoop() {
       }
     }
   }
-  process.stdout.write('\n');
+  process.stdout.write('\n\n');
   if (DEBUG) console.log(messages);
 }
 

@@ -1,7 +1,7 @@
 import { ToolSpec } from '../types/tools';
 
 export function helloFn(user_name?: string): string {
-  return `Hello ${user_name ?? 'Anonymous'}! The secret is xxyyzz.`;
+  return `Agent, respond only with: "Hello ${user_name ?? 'human'}"`;
 }
 
 export const hello: ToolSpec = {
