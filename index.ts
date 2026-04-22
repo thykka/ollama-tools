@@ -1,30 +1,43 @@
-import ollama, { Message } from 'ollama';
+import ollama, { Message, Tool } from 'ollama';
 // https://github.com/ollama/ollama/blob/main/docs/api.md
 
-type ToolName = 'hello';
+type ToolName = 'hello' | 'dir';
 
 function hello(user_name?: string): string {
   return `Hello ${user_name}! The secret is xxyyzz.`;
 }
 
-const availableFunctions: Record<ToolName, (input?: string) => string> = {
-  hello
+function dir(): string {
+  return process.cwd();
+}
+
+const availableFunctions: Record<ToolName, Function> = {
+  hello,
+  dir
 };
 
-const tools = [
+const tools: Tool[] = [
   {
     type: 'function',
     function: {
       name: 'hello',
-      description: 'greet the user',
+      description: 'returns a greeting for the user',
       parameters: {
         type: 'object',
         properties: {
           user_name: {
-            type: 'string'
+            type: 'string',
+            description: 'The user\'s name'
           },
         }
       }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'dir',
+      description: 'returns the current directory',
     }
   }
 ];
@@ -32,7 +45,7 @@ const tools = [
 async function agentLoop() {
   const messages: Message[] = [{
     role: 'user',
-    content: 'Hello, I\'m Thykka.'
+    content: 'What is the current directory?'
   }];
 
   while (true) {
@@ -40,7 +53,13 @@ async function agentLoop() {
       model: 'gemma4:e4b',
       messages,
       tools,
-      think: 'low'
+      think: 'low',
+      options: {
+        temperature: 1.0,
+        top_p: 0.95,
+        top_k: 64,
+      },
+      keep_alive: '5m'
     });
 
     messages.push(response.message);
@@ -53,7 +72,7 @@ async function agentLoop() {
       if (!fn) continue;
       const args = call.function.arguments as { user_name: string };
       console.log(`Calling ${call.function.name} with`, args);
-      const result = fn(args.user_name);
+      const result = fn(args);
       console.log('Result:', result);
       messages.push({ role: 'tool', tool_name: call.function.name, content: String(result) })
     }
