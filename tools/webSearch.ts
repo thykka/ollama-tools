@@ -12,6 +12,8 @@ function parseResults(html: string): string {
   const maxResults = 8;
   const dom = parseDocument(html);
   const results: unknown[] = [];
+
+  // Dear Kagi: can haz API access for personal usage?
   DomUtils.findAll(node => {
     if (node.type !== 'tag' || node.name !== 'a' || !node.attribs?.href) return false;
     const href = node.attribs.href;
@@ -28,7 +30,7 @@ function parseResults(html: string): string {
     results.push(`${results.length + 1}. [${title}](${href})\n> ${truncate(description)}\n`);
     return false;
   }, dom);
-  return `Found ${Math.min(results.length, maxResults)} results. Refer to them using the provided numbers.\n\n${results.slice(0, maxResults).join('\n')}`;
+  return `Found ${Math.min(results.length, maxResults)} results:\n\n${results.slice(0, maxResults).join('\n')}`;
 }
 
 async function webSearchFn(query: string): Promise<string> {

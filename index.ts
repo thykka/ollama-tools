@@ -76,7 +76,7 @@ async function agentLoop() {
 
     if (thinking || content || toolCalls.length) {
       messages.push({
-        role: 'agent',
+        role: 'assistant',
         thinking,
         content,
         tool_calls: toolCalls
